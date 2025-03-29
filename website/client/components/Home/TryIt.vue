@@ -66,6 +66,7 @@
         v-model:remove-empty-lines="removeEmptyLines"
         v-model:show-line-numbers="showLineNumbers"
         v-model:output-parsable="outputParsable"
+        v-model:compress="compress"
       />
 
       <div v-if="hasExecuted">
@@ -95,24 +96,26 @@ import TryItUrlInput from './TryItUrlInput.vue';
 
 // Form input states
 const url = ref('');
+const file = ref<File | null>(null);
+const mode = ref<'url' | 'file' | 'folder'>('url');
 const format = ref<'xml' | 'markdown' | 'plain'>('xml');
+const error = ref<string | null>(null);
+const loading = ref(false);
+const result = ref<PackResult | null>(null);
+const hasExecuted = ref(false);
+const inputRepositoryUrl = ref('');
+const uploadedFile = ref<File | null>(null);
+
+// Form input states
+const includePatterns = ref('');
+const ignorePatterns = ref('');
+const fileSummary = ref(true);
+const directoryStructure = ref(true);
 const removeComments = ref(false);
 const removeEmptyLines = ref(false);
 const showLineNumbers = ref(false);
-const fileSummary = ref(true);
-const directoryStructure = ref(true);
-const includePatterns = ref('');
-const ignorePatterns = ref('');
 const outputParsable = ref(false);
-const inputRepositoryUrl = ref('');
-
-// Processing states
-const loading = ref(false);
-const error = ref<string | null>(null);
-const result = ref<PackResult | null>(null);
-const hasExecuted = ref(false);
-const mode = ref<'url' | 'file' | 'folder'>('url');
-const uploadedFile = ref<File | null>(null);
+const compress = ref(false); // デフォルトはOFFに設定
 
 // Compute if the current mode's input is valid for submission
 const isSubmitValid = computed(() => {
@@ -121,7 +124,7 @@ const isSubmitValid = computed(() => {
       return !!url.value && isValidRemoteValue(url.value.trim());
     case 'file':
     case 'folder':
-      return !!uploadedFile.value;
+      return !!file.value;
     default:
       return false;
   }
@@ -170,16 +173,21 @@ async function handleSubmit() {
       includePatterns: includePatterns.value ? includePatterns.value.trim() : undefined,
       ignorePatterns: ignorePatterns.value ? ignorePatterns.value.trim() : undefined,
       outputParsable: outputParsable.value,
+      compress: compress.value, // 新規追加
     },
     {
       onSuccess: (response) => {
         result.value = response;
+        loading.value = false;
+        error.value = null;
       },
-      onError: (errorMessage) => {
-        error.value = errorMessage;
+      onError: (message) => {
+        error.value = message;
+        loading.value = false;
+        result.value = null;
       },
       signal: requestController.signal,
-      file: mode.value === 'file' || mode.value === 'folder' ? uploadedFile.value || undefined : undefined,
+      file: file.value,
     },
   );
 
