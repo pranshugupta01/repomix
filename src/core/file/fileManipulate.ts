@@ -36,7 +36,7 @@ class StripCommentsManipulator extends BaseManipulator {
   removeComments(content: string): string {
     const result = strip(content, {
       language: this.language,
-      preserveNewlines: true,
+      preserveNewlines: false, // Line breaks are not preserved
     });
     return rtrimLines(result);
   }
@@ -46,7 +46,7 @@ class CppManipulator extends BaseManipulator {
   removeComments(content: string): string {
     let result = strip(content, {
       language: 'c',
-      preserveNewlines: true,
+      preserveNewlines: false, // Line breaks are not preserved
     });
 
     result = result
